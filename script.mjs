@@ -75,20 +75,50 @@ const CourseInfo = {
       }
     }
   ];
-// function getLearnerData(course, ag, submission) {
-//     const result = [];
-    //get learner id
-function get_id(obj) {
+
+
+//get unique learner id
+function get_ids(obj, key) {
     let allId = [];
-    obj.forEach(row => {
-        
-        allId.push(row.learner_id);
-        
+    obj.forEach(row => {  
+      const value = row[key];
+      if (!allId[value]){
+        allId[value] = [];
+      }
+      allId[value].push({assignment_id: row.assignment_id, submission: row.submission});   
     })
+    return allId;
+}
+console.log(get_ids(LearnerSubmissions, `learner_id`));
+
+const uniqueId = [...new Set(LearnerSubmissions.map(el => el.learner_id))];
+const learners = uniqueId.map(el => {
+  return LearnerSubmissions.filter(obj => obj.learner_id === el);
+})
+console.log(learners);
+
+//Catch Errors: check if AssignmentGroup mismatching course_id and points_possible
+try{
+    if (AssignmentGroup.course_id != CourseInfo.id) {
+        throw "Error - AssignmentGroup does not belong to its course.";
+    }
+} catch (error) {
+    console.log(error);
 }
 
-console.log(get_id(LearnerSubmissions));
+AssignmentGroup.assignments.forEach(row => {
+  try{
+    if(row.points_possible == 0){
+      throw "Error -points_possible can't be 0";
+    }
+  } catch (error) {
+    console.log(error);
+  }
+})
 
+
+
+// function getLearnerData(course, ag, submission) {
 //     // let CourseInfo ;
 //     // let AssignmentGroup = ;
 //     // let LearnerSubmission = [];
