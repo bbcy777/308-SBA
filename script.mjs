@@ -89,13 +89,47 @@ function get_ids(obj, key) {
     })
     return allId;
 }
-console.log(get_ids(LearnerSubmissions, `learner_id`));
+// console.log(get_ids(LearnerSubmissions, `learner_id`));
 
 const uniqueId = [...new Set(LearnerSubmissions.map(el => el.learner_id))];
 const learners = uniqueId.map(el => {
   return LearnerSubmissions.filter(obj => obj.learner_id === el);
 })
-console.log(learners);
+// console.log(learners);
+
+//compare duedate and submition date, remove assignment not due
+let deleteId = [];
+let avg = 0;
+let weight = 0;
+for (let i in LearnerSubmissions) {
+  let assignment = LearnerSubmissions[i].assignment_id;
+  let subDate = LearnerSubmissions[i].submission.submitted_at;
+  let assignmentInfo={}; 
+
+  AssignmentGroup.assignments.forEach((el) => {
+    if (el.id == assignment) assignmentInfo = el;
+    }) 
+
+  if (subDate > assignmentInfo.due_at) {
+    LearnerSubmissions[i].submission.score -= 0.1*LearnerSubmissions[i].submission.score
+  }
+  avg = LearnerSubmissions[i].submission.score / assignmentInfo.points_possible;
+  LearnerSubmissions[i].avg = avg;
+  LearnerSubmissions[i].weight = assignmentInfo.points_possible;
+  
+    
+  if (assignmentInfo.due_at > "2024-5-15") deleteId.push(i); 
+}
+
+  //delete not due assignment scores
+for (let i of deleteId) {
+  LearnerSubmissions.splice(i,1);
+}
+
+console.log(LearnerSubmissions);
+  // console.log(LearnerSubmissions);
+
+
 
 //Catch Errors: check if AssignmentGroup mismatching course_id and points_possible
 try{
