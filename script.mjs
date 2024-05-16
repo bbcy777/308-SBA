@@ -77,91 +77,8 @@ const CourseInfo = {
   ];
 
 
-//get unique learner id
-function get_ids(obj, key) {
-    let allId = [];
-    obj.forEach(row => {  
-      const value = row[key];
-      if (!allId[value]){
-        allId[value] = [];
-      }
-      allId[value].push({assignment_id: row.assignment_id, submission: row.submission});   
-    })
-    return allId;
-}
-// console.log(get_ids(LearnerSubmissions, `learner_id`));
 
-
-
-//compare duedate and submition date, remove assignment not due
-let deleteId = [];
-let scores = 0;
-let weight = 0;
-for (let i in LearnerSubmissions) {
-  let assignment = LearnerSubmissions[i].assignment_id;
-  let subDate = LearnerSubmissions[i].submission.submitted_at;
-  let assignmentInfo={}; 
-
-  AssignmentGroup.assignments.forEach((el) => {
-    if (el.id == assignment) assignmentInfo = el;
-    }) 
-
-  if (subDate > assignmentInfo.due_at) {
-    LearnerSubmissions[i].submission.score -= 0.1*assignmentInfo.points_possible;
-  }
-  scores = LearnerSubmissions[i].submission.score / assignmentInfo.points_possible;
-  LearnerSubmissions[i].score = parseFloat(scores.toFixed(2));
-  LearnerSubmissions[i].weight = assignmentInfo.points_possible;
-  
-    
-  if (assignmentInfo.due_at > "2024-5-15") deleteId.push(i); 
-}
-
-  //delete not due assignment scores
-for (let i of deleteId) {
-  LearnerSubmissions.splice(i,1);
-}
-
-let avg
-for (let i of LearnerSubmissions) {
-  i.submission = i.submission.score;
-}
-// console.log(LearnerSubmissions);
-const result = {};
-const final = [];
-const uniqueId = [...new Set(LearnerSubmissions.map(el => el.learner_id))];
-console.log(uniqueId);
-
-
-for (let i in uniqueId) {
-  let total_score = 0;
-  let total_weight = 0;
-  for (let row of LearnerSubmissions){
-    if (row.learner_id == uniqueId[i]){
-      let key_name = parseInt(row.assignment_id);
-      result['id'] = row.learner_id;
-      result[key_name] = row.score;
-      total_score += row.submission;
-      total_weight += row.weight;
-    }
-  }
-  result[`avg`] = total_score / total_weight;
-  console.log(result);
-  final.push(result);
-}
-console.log(final);
-// const learners = uniqueId.map(el => {
-//   return LearnerSubmissions.filter(obj => obj.learner_id === el);
-// })
-// console.log(learners);
-
-
-
-
-
-
-
-function getLearnerData(course, ag, submission) {
+function getLearnerData(course, ag, submissions) {
   //Catch Errors: check if AssignmentGroup mismatching course_id
   try{
     if (ag.course_id != course.id) {
@@ -181,7 +98,61 @@ function getLearnerData(course, ag, submission) {
   }
   })
 
-  let result = [];
+  //compare duedate and submition date, remove assignment not due
+let deleteId = [];
+let scores = 0;
+let weight = 0;
+for (let i in submissions) {
+  let assignment = submissions[i].assignment_id;
+  let subDate = submissions[i].submission.submitted_at;
+  let assignmentInfo={}; 
+
+  ag.assignments.forEach((el) => {
+    if (el.id == assignment) assignmentInfo = el;
+    }) 
+
+  if (subDate > assignmentInfo.due_at) {
+    submissions[i].submission.score -= 0.1*assignmentInfo.points_possible;
+  }
+  scores = submissions[i].submission.score / assignmentInfo.points_possible;
+  submissions[i].score = parseFloat(scores.toFixed(2));
+  submissions[i].weight = assignmentInfo.points_possible;
+  
+    
+  if (assignmentInfo.due_at > "2024-5-15") deleteId.push(i); 
+}
+
+  //delete not due assignment scores
+for (let i of deleteId) {
+  submissions.splice(i,1);
+}
+
+for (let i of submissions) {
+  i.submission = i.submission.score;
+}
+// console.log(LearnerSubmissions);
+let result = [];
+
+const uniqueId = [...new Set(submissions.map(el => el.learner_id))];
+
+for (let i in uniqueId) {
+  let total_score = 0;
+  let total_weight = 0;
+  let obj = {id: uniqueId[i]};
+  for (let row of submissions){
+    if (row.learner_id == uniqueId[i]){
+      let key_name = row.assignment_id;
+
+      obj[key_name] = row.score;
+      total_score += row.submission;
+      total_weight += row.weight;
+    }
+  }
+  obj[`avg`] = total_score / total_weight;
+  result.push(obj);
+}
+
+  
 
     // let CourseInfo ;
     // let AssignmentGroup = ;
@@ -195,6 +166,6 @@ function getLearnerData(course, ag, submission) {
     return result;
 }
 
-// const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
 
-// console.log(result);
+console.log(result);
