@@ -91,15 +91,11 @@ function get_ids(obj, key) {
 }
 // console.log(get_ids(LearnerSubmissions, `learner_id`));
 
-const uniqueId = [...new Set(LearnerSubmissions.map(el => el.learner_id))];
-const learners = uniqueId.map(el => {
-  return LearnerSubmissions.filter(obj => obj.learner_id === el);
-})
-// console.log(learners);
+
 
 //compare duedate and submition date, remove assignment not due
 let deleteId = [];
-let avg = 0;
+let scores = 0;
 let weight = 0;
 for (let i in LearnerSubmissions) {
   let assignment = LearnerSubmissions[i].assignment_id;
@@ -111,10 +107,10 @@ for (let i in LearnerSubmissions) {
     }) 
 
   if (subDate > assignmentInfo.due_at) {
-    LearnerSubmissions[i].submission.score -= 0.1*LearnerSubmissions[i].submission.score
+    LearnerSubmissions[i].submission.score -= 0.1*assignmentInfo.points_possible;
   }
-  avg = LearnerSubmissions[i].submission.score / assignmentInfo.points_possible;
-  LearnerSubmissions[i].avg = avg;
+  scores = LearnerSubmissions[i].submission.score / assignmentInfo.points_possible;
+  LearnerSubmissions[i].score = parseFloat(scores.toFixed(2));
   LearnerSubmissions[i].weight = assignmentInfo.points_possible;
   
     
@@ -126,21 +122,56 @@ for (let i of deleteId) {
   LearnerSubmissions.splice(i,1);
 }
 
-console.log(LearnerSubmissions);
-  // console.log(LearnerSubmissions);
+let avg
+for (let i of LearnerSubmissions) {
+  i.submission = i.submission.score;
+}
+// console.log(LearnerSubmissions);
+const result = {};
+const final = [];
+const uniqueId = [...new Set(LearnerSubmissions.map(el => el.learner_id))];
+console.log(uniqueId);
+
+
+for (let i in uniqueId) {
+  let total_score = 0;
+  let total_weight = 0;
+  for (let row of LearnerSubmissions){
+    if (row.learner_id == uniqueId[i]){
+      let key_name = parseInt(row.assignment_id);
+      result['id'] = row.learner_id;
+      result[key_name] = row.score;
+      total_score += row.submission;
+      total_weight += row.weight;
+    }
+  }
+  result[`avg`] = total_score / total_weight;
+  console.log(result);
+  final.push(result);
+}
+console.log(final);
+// const learners = uniqueId.map(el => {
+//   return LearnerSubmissions.filter(obj => obj.learner_id === el);
+// })
+// console.log(learners);
 
 
 
-//Catch Errors: check if AssignmentGroup mismatching course_id and points_possible
-try{
-    if (AssignmentGroup.course_id != CourseInfo.id) {
+
+
+
+
+function getLearnerData(course, ag, submission) {
+  //Catch Errors: check if AssignmentGroup mismatching course_id
+  try{
+    if (ag.course_id != course.id) {
         throw "Error - AssignmentGroup does not belong to its course.";
     }
-} catch (error) {
+  } catch (error) {
     console.log(error);
-}
-
-AssignmentGroup.assignments.forEach(row => {
+  }
+//Catch Errors: check if points_possible = 0
+  ag.assignments.forEach(row => {
   try{
     if(row.points_possible == 0){
       throw "Error -points_possible can't be 0";
@@ -148,22 +179,21 @@ AssignmentGroup.assignments.forEach(row => {
   } catch (error) {
     console.log(error);
   }
-})
+  })
 
+  let result = [];
 
-
-// function getLearnerData(course, ag, submission) {
-//     // let CourseInfo ;
-//     // let AssignmentGroup = ;
-//     // let LearnerSubmission = [];
-//     // {
-//     //     id: 132,
-//     //     avg: 0.82, // (39 + 125) / (50 + 150)
-//     //     1: 0.78, // 39 / 50
-//     //     2: 0.833 // late: (140 - 15) / 150
-//     //   }
-//     return result;
-// }
+    // let CourseInfo ;
+    // let AssignmentGroup = ;
+    // let LearnerSubmission = [];
+    // {
+    //     id: 132,
+    //     avg: 0.82, // (39 + 125) / (50 + 150)
+    //     1: 0.78, // 39 / 50
+    //     2: 0.833 // late: (140 - 15) / 150
+    //   }
+    return result;
+}
 
 // const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
 
